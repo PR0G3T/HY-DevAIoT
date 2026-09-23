@@ -121,7 +121,7 @@ def frexp_mult(m):
 
 def quant_w(w):
     """Symmetric int8 weights."""
-    s = np.abs(w).amax() / 127.0
+    s = np.abs(w).max() / 127.0
     s = max(float(s), 1e-12)
     return np.round(w / s).clip(-127, 127).astype(np.int8), np.full(
         w.shape[0], s, np.float32
