@@ -179,9 +179,9 @@ def quantize(model, Xcal):
 
     q = {"s0": s0, "s3": s3}
     for name, (w, b), sprev, snext in [
-        ("1", (model.c1.weight.numpy(), model.c1.bias.numpy()), s0, s1),
-        ("2", (model.c2.weight.numpy(), model.c2.bias.numpy()), s1, s2),
-        ("3", (model.fc.weight.numpy(), model.fc.bias.numpy()), s2, s3),
+        ("1", (model.c1.weight.detach().numpy(), model.c1.bias.detach().numpy()), s0, s1),
+        ("2", (model.c2.weight.detach().numpy(), model.c2.bias.detach().numpy()), s1, s2),
+        ("3", (model.fc.weight.detach().numpy(), model.fc.bias.detach().numpy()), s2, s3),
     ]:
         wq, sw = quant_w(w)
         bq = np.round(b / (sprev * sw)).astype(np.int32)
