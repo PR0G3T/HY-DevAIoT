@@ -120,12 +120,10 @@ def frexp_mult(m):
 
 
 def quant_w(w):
-    """Symmetric int8 weights."""
-    s = np.abs(w).max() / 127.0
-    s = max(float(s), 1e-12)
-    return np.round(w / s).clip(-127, 127).astype(np.int8), np.full(
-        w.shape[0], s, np.float32
-    )
+    """Symmetric per-output-channel int8 weights."""
+    s = np.abs(w).max(axis=tuple(range(1, w.ndim))) / 127.0
+    s = np.maximum(s, 1e-12)
+    return np.round(w / s[(slice(None),) + (None,) * (w.ndim - 1)]).clip(-127, 127).astype(np.int8), s
 
 
 def requant(acc, m0, e):
