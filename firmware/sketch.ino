@@ -1,7 +1,9 @@
 // Human activity recognition on ESP32 + MPU6050.
-// 50 Hz sampling over I2C -> 128x6 window -> int8 CNN -> Serial.
+// 50 Hz sampling over I2C -> 128x6 window -> int8 CNN -> Serial + MQTT.
 
 #include <Wire.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
 
 extern "C" {
 #include "infer.h"
@@ -12,9 +14,19 @@ extern "C" {
 #define PERIOD_US 20000UL // 50 Hz
 #define HOP (WIN / 2)
 
+#define WIFI_SSID "Wokwi-GUEST" // Wokwi simulated AP; change for real hardware
+#define WIFI_PASS ""
+#define MQTT_HOST "broker.hivemq.com"
+#define MQTT_PORT 1883
+#define MQTT_TOPIC "hy/har"
+
 static float buf[WIN][IN_C];
 static int head, filled, since;
 static uint32_t next;
+
+static WiFiClient wc;
+static PubSubClient mqtt(wc);
+static uint32_t mqtt_try;
 
 static void reg(uint8_t r, uint8_t v) {
   Wire.beginTransmission(MPU_ADDR);
@@ -64,6 +76,12 @@ static void runInfer() {
 
   Serial.printf("%-11s conf=%.2f infer=%lu us\n", LABELS[cls], conf,
                 (unsigned long)us);
+  if (mqtt.connected()) {
+    char js[96];
+    snprintf(js, sizeof(js), "{\"a\":\"%s\",\"c\":%.2f,\"us\":%lu}",
+             LABELS[cls], conf, (unsigned long)us);
+    mqtt.publish(MQTT_TOPIC, js);
+  }
 }
 
 void setup() {
@@ -71,11 +89,24 @@ void setup() {
   Wire.begin(21, 22);
   Wire.setClock(400000);
   mpuInit();
-  Serial.println("READY");
+  mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  for (int i = 0; i < 80 && WiFi.status() != WL_CONNECTED; i++)
+    delay(100);
+  Serial.printf("READY wifi=%s\n",
+                WiFi.status() == WL_CONNECTED ? "up" : "off");
   next = micros();
 }
 
 void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    if (!mqtt.connected() && (int32_t)(millis() - mqtt_try) >= 0) {
+      mqtt_try = millis() + 5000;
+      mqtt.connect("hy-har-esp32");
+    }
+    mqtt.loop();
+  }
   if ((int32_t)(micros() - next) < 0)
     return;
   next += PERIOD_US; // fixed-epoch scheduling: no cumulative drift
