@@ -1,5 +1,12 @@
 // Human activity recognition on ESP32 + MPU6050.
-// 50 Hz sampling over I2C -> 128x6 window -> int8 CNN -> Serial + MQTT.
+//
+// Pipeline: 50 Hz periodic sampling over I2C -> ring buffer -> 128x6 window
+// every 64 samples (50% hop) -> per-channel standardization -> int8
+// quantization -> on-device int8 CNN inference -> Serial + MQTT telemetry.
+//
+// Serial commands: '1'..'6' replay a recorded test window of class 1..6
+// (walking, upstairs, downstairs, sitting, standing, laying) through the
+// same pipeline, for deterministic demos without moving the sensor.
 
 #include <Wire.h>
 #include <WiFi.h>
@@ -9,6 +16,7 @@ extern "C" {
 #include "infer.h"
 }
 #include "model.h"
+#include "demo.h"
 
 #define MPU_ADDR 0x68
 #define PERIOD_US 20000UL // 50 Hz
@@ -23,6 +31,7 @@ extern "C" {
 static float buf[WIN][IN_C];
 static int head, filled, since;
 static uint32_t next;
+static int replay = -1, rt;
 
 static WiFiClient wc;
 static PubSubClient mqtt(wc);
@@ -94,7 +103,7 @@ void setup() {
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   for (int i = 0; i < 80 && WiFi.status() != WL_CONNECTED; i++)
     delay(100);
-  Serial.printf("READY wifi=%s\n",
+  Serial.printf("READY wifi=%s cmds='1'..'6' replay\n",
                 WiFi.status() == WL_CONNECTED ? "up" : "off");
   next = micros();
 }
@@ -107,12 +116,24 @@ void loop() {
     }
     mqtt.loop();
   }
+  if (Serial.available()) {
+    char c = (char)Serial.read();
+    if (c >= '1' && c <= '6')
+      replay = c - '1', rt = 0;
+  }
   if ((int32_t)(micros() - next) < 0)
     return;
   next += PERIOD_US; // fixed-epoch scheduling: no cumulative drift
 
   float s[IN_C];
-  mpuRead(s);
+  if (replay >= 0) {
+    for (int c = 0; c < IN_C; c++)
+      s[c] = DEMO[replay][rt][c] / 1000.0f;
+    if (++rt >= WIN)
+      replay = -1;
+  } else {
+    mpuRead(s);
+  }
   memcpy(buf[head], s, sizeof(s));
   head = (head + 1) % WIN;
   if (++filled > WIN)
