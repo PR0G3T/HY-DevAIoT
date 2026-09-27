@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "author": "",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-mpu6050", "id": "imu", "top": 96, "left": 190, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+    [ "esp:3V3", "imu:VCC", "red", [ "h10", "v96" ] ],
+    [ "esp:GND.1", "imu:GND", "black", [ "h20", "v106" ] ],
+    [ "esp:D21", "imu:SDA", "green", [ "h0" ] ],
+    [ "esp:D22", "imu:SCL", "green", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
