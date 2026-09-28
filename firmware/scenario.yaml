@@ -1,0 +1,66 @@
+name: 'HAR demo: rest, then simulated walking bounce'
+version: 1
+author: ''
+steps:
+  - wait-serial: 'READY'
+  - delay: 5000ms
+
+  # still: gravity on Z only -> posture classes (sitting/standing/laying)
+  - set-control:
+      part-id: imu
+      control: accelX
+      value: 0
+  - set-control:
+      part-id: imu
+      control: accelY
+      value: 0
+  - set-control:
+      part-id: imu
+      control: accelZ
+      value: 1
+  - delay: 6000ms
+
+  # walking-like bounce: ~2 Hz vertical acceleration oscillation, 8 s
+  - set-control: { part-id: imu, control: accelZ, value: 1.4 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 0.6 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 1.4 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 0.6 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 1.4 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 0.6 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 1.4 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 0.6 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 1.4 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 0.6 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 1.4 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 0.6 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 1.4 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 0.6 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 1.4 }
+  - delay: 250ms
+  - set-control: { part-id: imu, control: accelZ, value: 0.6 }
+  - delay: 250ms
+
+  # rotation burst: hand-held turning motion on gyro channels
+  - set-control: { part-id: imu, control: accelZ, value: 1 }
+  - set-control: { part-id: imu, control: rotationY, value: 90 }
+  - delay: 700ms
+  - set-control: { part-id: imu, control: rotationY, value: -90 }
+  - delay: 700ms
+  - set-control: { part-id: imu, control: rotationY, value: 0 }
+
+  # back to rest
+  - delay: 6000ms
