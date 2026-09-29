@@ -33,7 +33,7 @@ test/
    rotation burst) through the real sensor path.
 5. MQTT: subscribe to `hy/har` on broker.hivemq.com.
 
-Real hardware: same sketch, SDA→GPIO21, SCL→GPIO22; set `WIFI_SSID`/`WIFI_PASS`.
+Real hardware: same sketch, SDA->GPIO21, SCL->GPIO22; set `WIFI_SSID`/`WIFI_PASS`.
 
 ## Reproduce the model
 
